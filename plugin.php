@@ -21,11 +21,9 @@ class init_plugin {
 		$this->people_controller = new people_control( $this->person );
 		$this->people_view = new people_view( $this->people_controller , $this->person );
 		
-		add_action( 'init', array( $this->person , 'register_people' ) );
-		
 		if( is_admin() ){ 
 			\add_action( 'edit_form_after_title', array( $this->people_view , 'output_editor'  ) , 99 );
-			\add_action('save_post', array( $this->person , 'save_people' ) );
+			\add_action('save_post_people', array( $this->person , 'save_people' ) );
 		} else {
 			\add_filter( 'the_content' , array( $this->people_view , 'output_public' ), 1 );
 		}
@@ -38,6 +36,7 @@ class people_control {
 	
 	public function __construct( $person ){
 		$this->person = $person;
+		\add_action( 'init', array( $this->person , 'register_people' ) );
 	}
 
 	
@@ -82,7 +81,20 @@ class person_model {
 		$this->biography =  $post->post_content;
 	}
 	
-	public function save_people() {
+	public function save_people( $post_id ) {
+		
+		if ( ! isset( $_POST['people_nonce'] ) ) return;
+		if ( ! wp_verify_nonce( $_POST['people_nonce'], 'submit_person' ) ) return;
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+		if ( ! current_user_can( 'edit_post', $post_id ) ) return;
+		
+		$fields = array( '_title','_email','_phone','_office','_address','_graduate','_undergraduate','_cv' );
+		foreach( $fields as $field ){
+			if( isset( $_POST[ $field ] ) ){
+				$instance = \sanitize_text_field( $_POST[ $field ] );
+				\update_post_meta( $post_id , $field , $instance );
+			}
+		}
 	}
 	
 	public function check_legacy( $current , $legacy ){

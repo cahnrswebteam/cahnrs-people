@@ -2,6 +2,7 @@
 <div id="people-editor">
 	<h3>Position Info</h3>
     <div id="people-bio">
+    	<?php wp_nonce_field('submit_person','people_nonce'); ?>
 		<label>Position Title: </label><input type="text" name="_title" value="<?php echo $this->person->title;?>" /><br />
     </div>
 	<h3>Contact Info</h3>
